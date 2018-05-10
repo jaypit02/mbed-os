@@ -156,6 +156,9 @@ psa_handle_t psa_connect(uint32_t sfid, uint32_t minor_version)
         // and the channels handler manager has the same storage size as the channels pool storage size
         SPM_ASSERT(PSA_SUCCESS == status);
         PSA_UNUSED(status);
+    } else {
+        os_status = osMemoryPoolFree(g_spm.channel_mem_pool, channel);
+        SPM_ASSERT(osOK == os_status);
     }
 
     dst_partition->partition_state = PARTITION_STATE_IDLE;
@@ -176,6 +179,10 @@ psa_error_t psa_call(
     size_t out_len
     )
 {
+    if (handle <= 0) {
+        SPM_PANIC("handle (%d) is invalid, must be a positive number\n", handle);
+    }
+
     if (in_len != 0) {
         if (in_len > PSA_MAX_INVEC_LEN) {
             SPM_PANIC("in_len (%d) is bigger than allowed (%d)\n", in_len, PSA_MAX_INVEC_LEN);
@@ -270,7 +277,7 @@ psa_error_t psa_call(
 
 psa_error_t psa_close(psa_handle_t handle)
 {
-    if (handle == PSA_NULL_HANDLE) {
+    if (handle <= 0) {
         return PSA_SUCCESS;
     }
 
